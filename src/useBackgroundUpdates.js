@@ -18,8 +18,6 @@ const useBackgroundUpdates = (onUpdate = () => {}, autoStart = false) => {
   const isRunningRef = useRef(false)
 
   const startUpdates = useCallback(async () => {
-    await serviceWorker.ready;
-
     const channel = await getChannel()
     const { current: isRunning } = isRunningRef
 
