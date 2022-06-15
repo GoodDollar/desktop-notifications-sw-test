@@ -1,32 +1,41 @@
 let polling = false;
 let pollingInterval;
 
-const channel = new BroadcastChannel('backgroundUpdates');
-
-const checkNotificationPermissions = (permission = null) => {
-  const status = permission || Notification.permission;
-
-  return status === "granted"
-};
-
-const sendNotification = (title, body, icon) => {
+const makeNotification = (title, body, icon) => {
   const options = { body, icon };
-  const isEnabled = checkNotificationPermissions();
+
+  return { title, options };
+}
+
+const sendNotification = notification => {
+  const { title, options } = notification
+  const isEnabled = "undefined" !== typeof Notification
+    && "granted" === Notification.permission;
 
   if (isEnabled) {
     self.registration.showNotification(title, options)
   }
+
+  return isEnabled
 };
 
-const startPolling = () => {
+const startPolling = channel => {
   if (polling) {
     return
   }
 
   polling = true;
   pollingInterval = setInterval(() => {
-    channel.postMessage('update');
-    sendNotification('Test notification', 'You\'ve got an update!');
+    const notification = makeNotification('Test notification', 'You\'ve got an update!');
+    // trying to send notification from SW
+    const notificationSent = sendNotification(notification);
+
+    channel.postMessage({
+      message: 'update',
+      notification,
+      notificationSent // Safari doesnt sends notifications from SW,
+      // so we're passing 'sent' flag for the app could re-send it if false
+    });
   }, 5000);
 }
 
@@ -37,10 +46,10 @@ const stopPolling = () => {
   }
 };
 
-channel.addEventListener('message', ({ data }) => {
+addEventListener('message', ({ source, data }) => {
   switch (data) {
     case 'startPolling':
-      startPolling();
+      startPolling(source);
       break;
     case 'stopPolling':
       stopPolling();

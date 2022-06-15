@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 
 const checkNotificationPermissions = (permission = null) =>
   (permission || Notification.permission) === "granted"
@@ -16,11 +16,10 @@ const useNotifications = () => {
     }
   }, [setEnabled])
 
-  const send = useCallback((title, body, icon) => {
-    const options = { body, icon }
-
-    return enabled ? new Notification(title, options) : null
-  }, [enabled])
+  const send = useCallback((title, options) =>
+    enabled ? new Notification(title, options) : null,
+    [enabled],
+  )
 
   return [enabled, query, send]
 }
